@@ -48,13 +48,44 @@ antibiotic regimens, adjusted for local resistance patterns.
 
 ## 📐 Mathematical Formulation & Logic
 
+### PSI/PORT Score Calculation
+
+The Pneumonia Severity Index (PSI/PORT) assigns points based on demographics, comorbidities, physical examination findings, and laboratory/radiographic results:
+
 ```text
-  score = 0
-  elif score == 2:
-  if score == 0:
-  elif score == 1:
-  score = primary_val
+score = age_points + comorbidity_points + exam_points + lab_points
+
+Where:
+  - age_points: Age in years (males) or age - 10 (females)
+  - nursing_home_resident: +10 points
+  - neoplastic disease: +30 points
+  - liver disease: +20 points
+  - congestive heart failure: +10 points
+  - cerebrovascular disease: +10 points
+  - renal disease: +10 points
+  - altered mental status: +20 points
+  - respiratory rate ≥ 30/min: +20 points
+  - systolic BP < 90 mmHg: +20 points
+  - temperature < 35°C: +15 points
+  - pulse ≥ 125/min: +10 points
+  - arterial pH < 7.35: +30 points
+  - BUN ≥ 30 mg/dL: +20 points
+  - sodium < 130 mEq/L: +20 points
+  - glucose ≥ 250 mg/dL: +10 points
+  - hematocrit < 30%: +10 points
+  - PaO2 < 60 mmHg: +10 points
+  - pleural effusion: +10 points
 ```
+
+### Risk Class Stratification
+
+| Risk Class | Score Range | 30-Day Mortality | Recommended Disposition |
+|:-----------|:------------|:-----------------|:------------------------|
+| I | ≤ 0 (or age <50, no comorbidities) | 0.1% | Outpatient |
+| II | ≤ 70 | 0.6% | Outpatient |
+| III | 71-90 | 2.8% | Observation / Brief hospitalization |
+| IV | 91-130 | 8.2% | Hospitalize |
+| V | > 130 | 29.2% | ICU consideration |
 
 ---
 
@@ -101,18 +132,52 @@ python cli.py --task-id <value> --target <value> --primary <value> --secondary <
 
 ---
 
+## 🚀 Installation
+
+### Local Development
+
+```bash
+# Clone the repository
+git clone https://github.com/abusuraihsakhri/psi-port-pneumonia-severity-index.git
+cd psi-port-pneumonia-severity-index
+
+# Install dependencies
+pip install -e ".[dev]"
+```
+
+### Docker Deployment
+
+```bash
+docker build -t psi-port-pneumonia-severity-index .
+docker run -p 8000:8000 -e AUDIT_SECRET_KEY=your-secret-key psi-port-pneumonia-severity-index
+```
+
+Or using Docker Compose:
+
+```bash
+docker-compose up -d
+```
+
+---
+
 ## 🧪 Testing & Verification
 
-Run the automated test suite:
+Run the full automated test suite:
 
 ```bash
 pytest -v
 ```
 
+Run with coverage:
+
+```bash
+pytest -v --cov=agents --cov=parallel_score_comparison --cov=antibiotic_stewardship --cov=disposition_decision_support
+```
+
 Execute high-throughput batch simulation benchmarks:
 
 ```bash
-python simulator.py --tasks 1000 --concurrency 8
+python simulator.py 1000
 ```
 
 ---
@@ -121,5 +186,14 @@ python simulator.py --tasks 1000 --concurrency 8
 
 ```bash
 docker build -t psi-port-pneumonia-severity-index .
-docker run -p 8000:8000 psi-port-pneumonia-severity-index
+docker run -p 8000:8000 -e AUDIT_SECRET_KEY=your-secret-key psi-port-pneumonia-severity-index
 ```
+
+### Environment Variables
+
+| Variable | Description | Default |
+|:---------|:------------|:--------|
+| `AUDIT_SECRET_KEY` | HMAC-SHA256 key for audit trail integrity | Randomly generated (ephemeral) |
+| `MODEL_PROVIDER` | LLM provider for chat feature | `mock` |
+
+> **Security Note:** Always set `AUDIT_SECRET_KEY` in production to ensure persistent audit trail integrity across restarts.

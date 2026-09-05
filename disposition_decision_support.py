@@ -7,7 +7,7 @@ floor vs. observation vs. ICU, with safety-net follow-up plans.
 Author: Dr. Abu Suraih Sakhri | License: MIT
 """
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 from enum import Enum
 

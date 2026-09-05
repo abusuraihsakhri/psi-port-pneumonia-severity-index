@@ -4,8 +4,8 @@ Domain: Privacy-Preserving Federated Healthcare & FHE
 Standard: HIPAA Safe Harbor §164.514 / Google SecAgg Standards
 """
 import uuid
-from typing import Dict, Any, List, Optional
-from .models import SystemTaskPayload, AgentAlert, UrgencyLevel, SystemIntegrityStatus
+from typing import List
+from .models import SystemTaskPayload, AgentAlert, UrgencyLevel
 
 
 class InvariantQCWorker:

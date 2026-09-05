@@ -7,8 +7,8 @@ local resistance patterns for community-acquired pneumonia.
 Author: Dr. Abu Suraih Sakhri | License: MIT
 """
 
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from dataclasses import dataclass
+from typing import List, Optional
 
 
 @dataclass

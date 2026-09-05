@@ -11,7 +11,7 @@ License: MIT
 import argparse
 import csv
 import json
-import math
+import os
 import sys
 from typing import Dict, Any, List, Optional
 
@@ -66,9 +66,14 @@ def process_single(args) -> None:
 
 
 def process_batch(input_csv: str, output_csv: str) -> None:
+    if not os.path.isfile(input_csv):
+        raise FileNotFoundError(f"Input CSV not found: {input_csv}")
+
     with open(input_csv, mode="r", encoding="utf-8-sig") as f:
         reader = csv.DictReader(f)
         fieldnames = list(reader.fieldnames or [])
+        if not fieldnames:
+            raise ValueError(f"Input CSV has no headers: {input_csv}")
         rows = list(reader)
 
     out_fields = fieldnames + ["score", "classification", "clinical_recommendation"]

@@ -43,6 +43,15 @@ class PneumoniaPatient:
     major_criteria: List[str] = field(default_factory=list)  # septic shock, mechanical ventilation
     minor_criteria: List[str] = field(default_factory=list)
 
+    def __post_init__(self):
+        """Validate patient data on construction."""
+        if not self.patient_id or not str(self.patient_id).strip():
+            raise ValueError("patient_id is required and cannot be empty")
+        if not isinstance(self.age, (int, float)) or self.age < 0 or self.age > 150:
+            raise ValueError(f"age must be between 0 and 150, got {self.age}")
+        if str(self.sex).lower() not in ("male", "female"):
+            raise ValueError(f"sex must be 'male' or 'female', got '{self.sex}'")
+
     def to_dict(self) -> Dict[str, Any]:
         return self.__dict__
 
