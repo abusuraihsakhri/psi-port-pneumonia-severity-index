@@ -97,13 +97,16 @@ def main(argv=None):
         out_rows = []
         for r in rows:
             try:
+                raw_critical = str(r.get("is_critical_flag", "false")).strip().lower()
+                if raw_critical not in ("true", "1", "yes", "false", "0", "no"):
+                    raise ValueError("is_critical_flag must be true or false")
                 payload = SystemTaskPayload(
                     task_id=r.get("task_id", "TASK-01"),
                     target_identifier=r.get("target_identifier", "TARGET-01"),
                     primary_metric=float(r.get("primary_metric", 15.0)),
                     secondary_metric=float(r.get("secondary_metric", 5.0)),
                     status_descriptor=r.get("status_descriptor", "NOMINAL"),
-                    is_critical_flag=bool(r.get("is_critical_flag", False)),
+                    is_critical_flag=str(r.get("is_critical_flag", "false")).strip().lower() in ("true", "1", "yes"),
                 )
             except (ValueError, TypeError) as e:
                 print(f"Error parsing row {r}: {e}", file=sys.stderr)
