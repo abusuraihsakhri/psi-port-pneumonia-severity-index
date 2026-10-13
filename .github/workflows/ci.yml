@@ -28,6 +28,10 @@ jobs:
         run: python -m pip check
       - name: Check Python syntax
         run: python -m compileall -q .
+      - name: Verify packaged site matches GitHub Pages site
+        run: |
+          cmp web/index.html agents/static/index.html
+          cmp web/psi.js agents/static/psi.js
       - name: Run regression tests
         run: python -m pytest -q
       - name: Verify installed command
