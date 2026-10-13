@@ -5,6 +5,7 @@ import argparse
 import csv
 import json
 import sys
+from psi_port import FIELD_NAMES, calculate_metrics, process_batch
 from agents.models import SystemTaskPayload
 from agents.supervisor import SystemSupervisor
 from agents.base import AuditLogger
@@ -16,6 +17,20 @@ def main(argv=None):
     parser = argparse.ArgumentParser(prog="psi-port-pneumonia-severity-index", description="Psi Port Pneumonia Severity Index")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
+    # Clinically validated PSI/PORT (separate from legacy task audit).
+    p_psi = subparsers.add_parser("psi", help="Calculate adult PSI/PORT score")
+    p_psi.add_argument("--age", type=int, required=True)
+    p_psi.add_argument("--sex", choices=("male", "female"), required=True)
+    for name in FIELD_NAMES:
+        p_psi.add_argument("--" + name.replace("_", "-"), action="store_true")
+    p_psi.add_argument("--assessed-all", action="store_true", required=True,
+                       help="All omitted findings have been assessed as absent")
+
+    p_psi_batch = subparsers.add_parser("psi-batch", help="Score a CSV with complete assessed PSI fields")
+    p_psi_batch.add_argument("-i", "--input", required=True)
+    p_psi_batch.add_argument("-o", "--output", default="results.csv")
+
+    # Legacy generic audit utilities, retained for compatibility.
     # Audit
     p_audit = subparsers.add_parser("audit", help="Run single task evaluation")
     p_audit.add_argument("--task-id", default="TASK-2026-001")
@@ -43,6 +58,23 @@ def main(argv=None):
     p_serve.add_argument("--port", type=int, default=8000)
 
     args = parser.parse_args(argv)
+
+    if args.command == "psi":
+        params = vars(args).copy()
+        params.pop("command")
+        params.pop("assessed_all")
+        try:
+            print(json.dumps(calculate_metrics(**params), indent=2, ensure_ascii=False))
+        except ValueError as exc:
+            parser.error(str(exc))
+        return 0
+
+    if args.command == "psi-batch":
+        try:
+            process_batch(args.input, args.output)
+        except (ValueError, OSError) as exc:
+            parser.error(str(exc))
+        return 0
 
     if args.command == "audit":
         payload = SystemTaskPayload(
