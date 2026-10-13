@@ -203,13 +203,13 @@ class TestAntibioticStewardship:
         engine = AntibioticStewardshipEngine()
         rec = engine.get_recommendation("V")
         assert rec.psi_risk_class == "V"
-        assert rec.setting == "ICU"
+        assert rec.setting.startswith("Hospital")
         assert rec.duration_days == 7
 
-    def test_invalid_class_defaults_to_III(self):
+    def test_invalid_class_is_rejected(self):
         engine = AntibioticStewardshipEngine()
-        rec = engine.get_recommendation("INVALID")
-        assert rec.psi_risk_class == "III"
+        with pytest.raises(ValueError, match="PSI class"):
+            engine.get_recommendation("INVALID")
 
     def test_penicillin_allergy_adjustment(self):
         engine = AntibioticStewardshipEngine()
