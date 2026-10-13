@@ -248,18 +248,21 @@ class TestDispositionDecision:
         assert decision.recommended_level == "home"
         assert decision.bed_urgency == "routine"
 
-    def test_class_V_icu_disposition(self):
+    def test_class_v_does_not_imply_icu_need(self):
         engine = DispositionDecisionEngine()
         decision = engine.make_decision("PT-001", "V", 160)
-        assert decision.recommended_level == "icu"
-        assert decision.bed_urgency == "emergent"
+        assert decision.recommended_level == "floor"
+        assert decision.bed_urgency == "urgent"
+        critical = engine.make_decision("PT-001", "V", 160, severe_cap=True)
+        assert critical.recommended_level == "icu"
+        assert critical.bed_urgency == "emergent"
 
     def test_bed_unavailability_fallback(self):
         beds = BedAvailability(icu_beds_available=0, step_down_beds_available=5)
         engine = DispositionDecisionEngine(bed_availability=beds)
-        decision = engine.make_decision("PT-001", "V", 160)
-        # Should fall back to step_down when ICU is full
-        assert decision.recommended_level == "step_down"
+        decision = engine.make_decision("PT-001", "V", 160, severe_cap=True)
+        # Insufficient capacity must not downgrade a medically indicated ICU level.
+        assert decision.recommended_level == "transfer_required"
 
     def test_social_factors_adjustment(self):
         engine = DispositionDecisionEngine()
@@ -269,8 +272,7 @@ class TestDispositionDecision:
         )
         assert any("lives alone" in r.lower() for r in decision.rationale)
 
-    def test_invalid_class_defaults_to_III(self):
+    def test_invalid_class_is_rejected(self):
         engine = DispositionDecisionEngine()
-        decision = engine.make_decision("PT-001", "INVALID", 85)
-        assert decision.psi_risk_class == "III"
-        assert decision.recommended_level == "observation"
+        with pytest.raises(ValueError, match="PSI class"):
+            engine.make_decision("PT-001", "INVALID", 85)
