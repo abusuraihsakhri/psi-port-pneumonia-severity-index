@@ -1,4 +1,3 @@
-Patient_ID,v1,v2,v3
-PT-101,14.5,4.2,1.8
-PT-102,8.0,2.1,0.5
-PT-103,28.4,12.0,5.5
+age,sex,nursing_home_resident,neoplastic_disease,liver_disease,congestive_heart_failure,cerebrovascular_disease,renal_disease,altered_mental_status,respiratory_rate_ge_30,systolic_bp_lt_90,temperature_extreme,pulse_ge_125,arterial_ph_lt_7_35,bun_ge_30,sodium_lt_130,glucose_ge_250,hematocrit_lt_30,hypoxemia,pleural_effusion
+65,male,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false
+72,female,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,true,false
