@@ -9,7 +9,7 @@ from agents.supervisor import SystemSupervisor
 from agents.base import PHIGuard, SecurityException, AuditLogger
 
 def run_simulation(iterations: int = 100):
-    print(f"Starting Distributed Component Simulation on Psi Port Pneumonia Severity Index ({iterations} tasks)...")
+    if iterations < 0:\n        raise ValueError("iterations must be non-negative")\n    print(f"Starting Distributed Component Simulation on Psi Port Pneumonia Severity Index ({iterations} tasks)...")
     supervisor = SystemSupervisor(model_provider="mock")
     start_time = time.time()
     nominal_count = 0
@@ -54,10 +54,10 @@ def run_simulation(iterations: int = 100):
     print("=" * 70)
     print(f"  Total Tasks Processed:     {iterations}")
     print(f"  Elapsed Time:              {elapsed:.3f} seconds ({iterations/max(0.001, elapsed):.1f} tasks/sec)")
-    print(f"  Routine Outcomes:          {nominal_count} ({nominal_count/iterations*100:.1f}%)")
-    print(f"  Elevated Risk Outcomes:    {elevated_count} ({elevated_count/iterations*100:.1f}%)")
-    print(f"  Critical Interventions:    {critical_count} ({critical_count/iterations*100:.1f}%)")
-    print(f"  Adversarial PHI Intercepts:{phi_blocked_count} (100% Interception Rate)")
+    print(f"  Routine Outcomes:          {nominal_count} ({nominal_count/max(iterations,1)*100:.1f}%)")
+    print(f"  Elevated Risk Outcomes:    {elevated_count} ({elevated_count/max(iterations,1)*100:.1f}%)")
+    print(f"  Critical Interventions:    {critical_count} ({critical_count/max(iterations,1)*100:.1f}%)")
+    print(f"  Injected sample identifiers flagged: {phi_blocked_count} (pattern tests only; not HIPAA validation)")
     print(f"  HMAC Audit Ledger Blocks:  {len(AuditLogger.get_trail())}")
     print(f"  HMAC Cryptographic Check:  {AuditLogger.verify_integrity()}")
     print("=" * 70)

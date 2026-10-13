@@ -1,199 +1,87 @@
-# PSI Port Pneumonia Severity Index
+# Pneumonia Severity Index (PSI / PORT)
 
-> **Domain:** Privacy-Preserving Healthcare & Federated Computing  
-> **Reference Guidelines & Standards:** `HIPAA Safe Harbor §164.514 & Differential Privacy RDP`
+An adult community-acquired pneumonia prognostic calculator implementing the two-step Pneumonia Severity Index (PSI/PORT) described by Fine and colleagues. The same point rules are implemented in Python and dependency-free browser JavaScript.
 
-<div align="center">
+The calculator is intended for trained clinicians or clinical education. **It estimates relative 30-day mortality risk, not ICU admission criteria or a treatment prescription.** Clinical instability, oxygen needs, social circumstances and clinician judgment take precedence.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-![Python](https://img.shields.io/badge/Python-3.10%20%7C%203.11%20%7C%203.12-3776AB.svg?logo=python&logoColor=white)
-![FastAPI](https://img.shields.io/badge/FastAPI-0.111-009688.svg?logo=fastapi&logoColor=white)
-![Audit Trail](https://img.shields.io/badge/Audit-HMAC--SHA256_Tamper--Evident-brightgreen.svg)
-![Zero-PHI Guard](https://img.shields.io/badge/Guard-Zero--PHI_Outbound-blue.svg)
-![Docker](https://img.shields.io/badge/Docker-Ready-2496ED.svg?logo=docker&logoColor=white)
+## Browser calculator
 
-</div>
+The static interface is in [`web/index.html`](web/index.html). It runs without Python, a backend, cookies, local storage or external libraries. The repository's GitHub Pages workflow publishes the contents of `web/` after Python and JavaScript tests pass. Deployment is not equivalent to clinical validation of this software.
 
----
+No patient names or identifiers are requested. The browser calculator performs arithmetic locally; it does not submit input data. Do not enter protected patient information into the legacy API or logging utilities, which are not authenticated or certified for clinical PHI.
 
-## 📖 What It Does
+## Scoring
 
-PSI/PORT Antibiotic Stewardship Linkage
-Generates empiric antibiotic recommendations based on PSI risk class and
-local resistance patterns for community-acquired pneumonia.
+The PSI is a **two-stage** rule:
 
-Author: Dr. Abu Suraih Sakhri | License: MIT
+1. **Class I:** age 50 years or younger, with none of the five specified comorbidities and none of the five specified abnormal examination findings. This initial screen is *not* based on the point-total threshold.
+2. **Classes II–V:** otherwise, sum age (minus 10 points for female sex), nursing-home status and the individual weighted clinical, laboratory and radiographic findings.
 
-PSI/PORT Disposition Decision Support
-Integrates PSI score with bed management logic for optimal patient placement:
-floor vs. observation vs. ICU, with safety-net follow-up plans.
+| Class | Rule | General interpretation |
+| --- | --- | --- |
+| I | Initial low-risk screen | Very low estimated risk |
+| II | Point total ≤ 70, if not I | Low |
+| III | 71–90 | Intermediate |
+| IV | 91–130 | High |
+| V | > 130 | Very high |
 
-Author: Dr. Abu Suraih Sakhri | License: MIT
+The calculator covers 18 explicitly assessed findings. Examples: neoplastic disease +30, liver disease +20, altered mental status +20, respiratory rate ≥30/min +20, temperature <35°C **or ≥40°C** +15, arterial pH <7.35 +30, BUN ≥30 mg/dL +20, and PaO₂ <60 mmHg **or** oxygen saturation <90% +10. The browser lists the full set and shows a point breakdown.
 
----
+**Unmeasured does not mean normal.** To prevent silent risk underestimation, Python and API callers must explicitly supply all 18 boolean findings. In the browser, all unchecked findings must have been assessed and confirmed absent before calculation. Only adults aged 18–120 are accepted by this implementation. The historical score requires its original male/female input variable; it was not designed as a sex-inclusive model.
 
-## ⚙️ Key Capabilities & Algorithmic Modules
+## Python installation and CLI
 
-### 🔬 Core Algorithmic & Evaluation Engines
-
-- **`ResistancePattern`**: Local antibiogram resistance data for empiric therapy guidance.
-- **`AntibioticRecommendation`**: Structured antibiotic recommendation output.
-- **`AntibioticStewardshipEngine`**: Maps PSI/PORT risk classes to IDSA/ATS guideline-concordant empiric
-antibiotic regimens, adjusted for local resistance patterns.
-- **`DispositionLevel`** — dedicated module for disposition level evaluation and state verification.
-- **`BedAvailability`**: Current bed availability for disposition planning.
-- **`DispositionDecision`**: Structured disposition decision output.
-
----
-
-## 📐 Mathematical Formulation & Logic
-
-### PSI/PORT Score Calculation
-
-The Pneumonia Severity Index (PSI/PORT) assigns points based on demographics, comorbidities, physical examination findings, and laboratory/radiographic results:
-
-```text
-score = age_points + comorbidity_points + exam_points + lab_points
-
-Where:
-  - age_points: Age in years (males) or age - 10 (females)
-  - nursing_home_resident: +10 points
-  - neoplastic disease: +30 points
-  - liver disease: +20 points
-  - congestive heart failure: +10 points
-  - cerebrovascular disease: +10 points
-  - renal disease: +10 points
-  - altered mental status: +20 points
-  - respiratory rate ≥ 30/min: +20 points
-  - systolic BP < 90 mmHg: +20 points
-  - temperature < 35°C: +15 points
-  - pulse ≥ 125/min: +10 points
-  - arterial pH < 7.35: +30 points
-  - BUN ≥ 30 mg/dL: +20 points
-  - sodium < 130 mEq/L: +20 points
-  - glucose ≥ 250 mg/dL: +10 points
-  - hematocrit < 30%: +10 points
-  - PaO2 < 60 mmHg: +10 points
-  - pleural effusion: +10 points
-```
-
-### Risk Class Stratification
-
-| Risk Class | Score Range | 30-Day Mortality | Recommended Disposition |
-|:-----------|:------------|:-----------------|:------------------------|
-| I | ≤ 0 (or age <50, no comorbidities) | 0.1% | Outpatient |
-| II | ≤ 70 | 0.6% | Outpatient |
-| III | 71-90 | 2.8% | Observation / Brief hospitalization |
-| IV | 91-130 | 8.2% | Hospitalize |
-| V | > 130 | 29.2% | ICU consideration |
-
----
-
-## 💻 CLI Quickstart & Usage
-
-### 1. Guided Interactive Mode
-```bash
-python cli.py
-```
-
-### 2. Direct Parameterized Evaluation
-```bash
-python cli.py --task-id <value> --target <value> --primary <value> --secondary <value>
-```
-
-### Parameter Reference
-- `--task-id`: Specifies input measurement or parameter value.
-- `--target`: Specifies input measurement or parameter value.
-- `--primary`: Specifies input measurement or parameter value.
-- `--secondary`: Specifies input measurement or parameter value.
-- `--critical`: Specifies input measurement or parameter value.
-- `--status`: Specifies input measurement or parameter value.
-- `--input`: Specifies input measurement or parameter value.
-- `--output`: Specifies input measurement or parameter value.
-
-### Input Data Schema
-
-| Field | Description | Requirement |
-|:------|:------------|:------------|
-| `Patient_ID` | Parameter / observation metric | Required |
-| `v1` | Parameter / observation metric | Required |
-| `v2` | Parameter / observation metric | Required |
-| `v3` | Parameter / observation metric | Required |
-
----
-
-## 🛡️ Security & Enterprise Architecture
-
-* **Zero-PHI Outbound Interceptor:** Active AST and regex inspection blocking SSNs, MRNs, phone numbers, and patient identifiers.
-* **Tamper-Evident HMAC-SHA256 Audit Trail:** Chained, cryptographically signed logs for every evaluation and state transition.
-* **Air-Gapped LLM Reasoning Adapter:** Agnostic integration for local Ollama instances (`llama3`, `mistral`), Claude 3.5 Sonnet, GPT-4o, and deterministic test mocks.
-* **Active Learning Bayesian Calibration:** Dynamic tracker updating worker reliability weights and monitoring Brier calibration drift.
-* **FastAPI & Prometheus Telemetry:** Exposes OpenAPI 3.1 REST endpoints and operational Prometheus metrics (`/metrics`).
-
----
-
-## 🚀 Installation
-
-### Local Development
+Python 3.10 or newer:
 
 ```bash
-# Clone the repository
-git clone https://github.com/abusuraihsakhri/psi-port-pneumonia-severity-index.git
-cd psi-port-pneumonia-severity-index
-
-# Install dependencies
-pip install -e ".[dev]"
+python -m pip install -e ".[dev]"
+python -m pytest -q
+node --test web/psi.test.cjs  # optional: browser algorithm tests, Node.js 18+
 ```
 
-### Docker Deployment
+Single-case assessment, only when **every other checkbox-style criterion was assessed and absent**:
 
 ```bash
-docker build -t psi-port-pneumonia-severity-index .
-docker run -p 8000:8000 -e AUDIT_SECRET_KEY=your-secret-key psi-port-pneumonia-severity-index
+psi-port psi --age 65 --sex male --assessed-all
+# Example with present findings:
+psi-port psi --age 72 --sex female --congestive-heart-failure --hypoxemia --assessed-all
 ```
 
-Or using Docker Compose:
+CSV batch evaluation:
 
 ```bash
-docker-compose up -d
+psi-port psi-batch -i sample.csv -o results.csv
+# Also available: python psi_port.py batch -i sample.csv -o results.csv
 ```
 
----
+The CSV must contain `age`, `sex` and all 18 PSI flag columns (`true`/`false`, `yes`/`no` or `1`/`0`). See [`sample.csv`](sample.csv). Invalid or incomplete rows raise an error rather than silently producing a low-risk classification.
 
-## 🧪 Testing & Verification
-
-Run the full automated test suite:
+## Optional REST server
 
 ```bash
-pytest -v
+psi-port serve --host 127.0.0.1 --port 8000
 ```
 
-Run with coverage:
+Open `http://127.0.0.1:8000/` for the calculator or `http://127.0.0.1:8000/docs` for the generated FastAPI documentation. `POST /api/psi` accepts `age`, `sex` and all 18 *required* boolean findings. Browser and Python results are intended to follow the same rule, with regression tests covering clinical boundaries.
+
+The older `audit`, `chat`, `batch`, `verify-audit` commands and `/api/audit` endpoints remain for compatibility. **They are generic demonstrations, not PSI calculations, protected clinical systems or validated PHI detectors.** Mock responses are not clinical verification. Ancillary antibiotic and disposition modules contain illustrative pathways, not individualized prescribing or bed-placement decisions.
+
+## Security and deployment
+
+The browser tool transmits no clinical inputs and requires no Python-in-the-browser runtime. For server use, `docker-compose.yml` requires an environment-provided `AUDIT_SECRET_KEY` and binds to localhost by default:
 
 ```bash
-pytest -v --cov=agents --cov=parallel_score_comparison --cov=antibiotic_stewardship --cov=disposition_decision_support
+export AUDIT_SECRET_KEY="$(python -c 'import secrets; print(secrets.token_hex(32))')"
+docker compose up --build
 ```
 
-Execute high-throughput batch simulation benchmarks:
+The legacy in-memory HMAC ledger verifies chained signatures but is **not persistent** and is not a compliance-grade audit system. The identifier-pattern guard is not a complete PHI detection/de-identification system and does not establish HIPAA compliance. Do not expose the unauthenticated API to untrusted networks or transmit clinical identifiers to it.
 
-```bash
-python simulator.py 1000
-```
+## References
 
----
+- Fine MJ, Auble TE, Yealy DM, et al. A prediction rule to identify low-risk patients with community-acquired pneumonia. *N Engl J Med*. 1997;336:243–250. [doi:10.1056/NEJM199701233360402](https://doi.org/10.1056/NEJM199701233360402).
+- Metlay JP, Waterer GW, Long AC, et al. Diagnosis and treatment of adults with community-acquired pneumonia. *Am J Respir Crit Care Med*. 2019;200:e45–e67. [ATS/IDSA guideline](https://www.idsociety.org/practice-guideline/community-acquired-pneumonia-cap-in-adults/). This guideline recommends PSI alongside judgment for hospitalization decisions and separate severe-CAP criteria for ICU decisions.
 
-## 🐳 Container Deployment
+## License
 
-```bash
-docker build -t psi-port-pneumonia-severity-index .
-docker run -p 8000:8000 -e AUDIT_SECRET_KEY=your-secret-key psi-port-pneumonia-severity-index
-```
-
-### Environment Variables
-
-| Variable | Description | Default |
-|:---------|:------------|:--------|
-| `AUDIT_SECRET_KEY` | HMAC-SHA256 key for audit trail integrity | Randomly generated (ephemeral) |
-| `MODEL_PROVIDER` | LLM provider for chat feature | `mock` |
-
-> **Security Note:** Always set `AUDIT_SECRET_KEY` in production to ensure persistent audit trail integrity across restarts.
+MIT — see [LICENSE](LICENSE).

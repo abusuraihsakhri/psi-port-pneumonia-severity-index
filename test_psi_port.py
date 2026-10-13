@@ -1,21 +1,29 @@
-import pytest
-from psi_port import calculate_metrics, process_batch
+"""Public PSI API and single/batch command regression tests."""
+import csv
+from psi_port import FIELD_NAMES, calculate_metrics, process_batch, main
 
 
-def test_psi_port_single():
-    res = calculate_metrics(v1=12.0, v2=4.0)
-    assert "score" in res
-    assert "classification" in res
-    assert res["score"] > 0
+def test_single_class_ii():
+    inputs = {"age": 65, "sex": "male", **{name: False for name in FIELD_NAMES}}
+    result = calculate_metrics(**inputs)
+    assert result["score"] == 65
+    assert result["risk_class"] == "II"
 
 
-def test_psi_port_batch(tmp_path):
-    csv_in = tmp_path / "in.csv"
-    csv_out = tmp_path / "out.csv"
-    csv_in.write_text("Patient,v1,v2\nPat_001,15.0,3.0\nPat_002,5.0,1.0\n", encoding="utf-8")
-    
-    process_batch(str(csv_in), str(csv_out))
-    assert csv_out.exists()
-    content = csv_out.read_text(encoding="utf-8")
-    assert "Pat_001" in content
-    assert "score" in content
+def test_batch(tmp_path):
+    input_csv = tmp_path / "in.csv"
+    output_csv = tmp_path / "out.csv"
+    columns = ["age", "sex", *FIELD_NAMES]
+    with input_csv.open("w", newline="") as stream:
+        writer = csv.DictWriter(stream, fieldnames=columns)
+        writer.writeheader()
+        writer.writerow({"age": 65, "sex": "male", **{name: "false" for name in FIELD_NAMES}})
+    process_batch(str(input_csv), str(output_csv))
+    with output_csv.open(newline="") as stream:
+        result = next(csv.DictReader(stream))
+    assert result["risk_class"] == "II"
+
+
+def test_single_cli(capsys):
+    assert main(["single", "--age", "65", "--sex", "male", "--assessed-all"]) == 0
+    assert '"risk_class": "II"' in capsys.readouterr().out

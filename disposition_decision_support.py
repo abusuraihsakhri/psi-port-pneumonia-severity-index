@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
 PSI/PORT Disposition Decision Support
-Integrates PSI score with bed management logic for optimal patient placement:
-floor vs. observation vs. ICU, with safety-net follow-up plans.
+Illustrative disposition planning alongside independent severe-CAP assessment.
+PSI alone must not be used to determine ICU admission.
 
 Author: Dr. Abu Suraih Sakhri | License: MIT
 """
@@ -56,7 +56,7 @@ class DispositionDecisionEngine:
             "alternative": None,
             "bed_urgency": "routine",
             "rationale": [
-                "PSI Risk Class I: very low mortality risk (0.1%)",
+                "PSI Class I: very low predicted mortality risk",
                 "No adverse clinical features requiring hospitalization",
                 "Outpatient management is standard of care",
             ],
@@ -86,7 +86,7 @@ class DispositionDecisionEngine:
             "alternative": DispositionLevel.OBSERVATION,
             "bed_urgency": "routine",
             "rationale": [
-                "PSI Risk Class II: low mortality risk (0.6%)",
+                "PSI Class II: low predicted mortality risk",
                 "Safe for outpatient management with close follow-up",
                 "Consider observation if social factors limit outpatient safety",
             ],
@@ -115,7 +115,7 @@ class DispositionDecisionEngine:
             "alternative": DispositionLevel.FLOOR,
             "bed_urgency": "routine",
             "rationale": [
-                "PSI Risk Class III: moderate mortality risk (2.8%)",
+                "PSI Class III: intermediate predicted mortality risk",
                 "Observation unit stay for 23-hour monitoring and IV antibiotics",
                 "May discharge if clinically stable after observation period",
             ],
@@ -150,8 +150,8 @@ class DispositionDecisionEngine:
             "alternative": DispositionLevel.STEP_DOWN,
             "bed_urgency": "urgent",
             "rationale": [
-                "PSI Risk Class IV: high mortality risk (8.2%)",
-                "Inpatient hospitalization required",
+                "PSI Class IV indicates elevated prognostic risk",
+                "Inpatient hospitalization is generally considered",
                 "Consider step-down unit if borderline hemodynamic or respiratory status",
             ],
             "safety_net": {
@@ -176,16 +176,16 @@ class DispositionDecisionEngine:
             ],
         },
         "V": {
-            "level": DispositionLevel.ICU,
+            "level": DispositionLevel.FLOOR,
             "alternative": DispositionLevel.STEP_DOWN,
-            "bed_urgency": "emergent",
+            "bed_urgency": "urgent",
             "rationale": [
-                "PSI Risk Class V: very high mortality risk (29.2%)",
-                "ICU admission recommended for intensive monitoring and treatment",
-                "Sepsis protocol activation if applicable",
+                "PSI Class V indicates high predicted mortality, not an automatic ICU indication",
+                "Check ATS/IDSA severe-CAP criteria and current organ support requirements",
+                "Sepsis protocol assessment if clinically indicated",
             ],
             "safety_net": {
-                "monitoring_frequency": "Continuous monitoring with hourly assessments",
+                "monitoring_frequency": "Select monitoring by current physiological status and severe-CAP criteria",
                 "critical_care_protocols": [
                     "Sepsis bundle compliance",
                     "ARDS lung-protective ventilation if needed",
@@ -194,14 +194,14 @@ class DispositionDecisionEngine:
                 ],
             },
             "follow_up": [
-                "ICU attending reassessment q12h minimum",
+                "Clinician reassessment based on observed severity",
                 "Multidisciplinary rounds daily",
                 "Goals-of-care discussion within 48 hours",
-                "Step-down criteria evaluation daily",
+                "Evaluate ward, step-down, or ICU need using severe-CAP criteria",
             ],
             "escalation": [
-                "ECMO evaluation if refractory ARDS",
-                "Palliative care consultation if poor prognosis",
+                "Escalate respiratory support if clinically indicated",
+                "Discuss goals of care as appropriate",
                 "Infectious disease consultation for complex cases",
             ],
         },
@@ -216,12 +216,15 @@ class DispositionDecisionEngine:
         psi_risk_class: str,
         psi_score: int,
         social_factors: Optional[Dict[str, Any]] = None,
+        severe_cap: bool = False,
     ) -> DispositionDecision:
         """Generate a disposition decision with safety-net planning."""
         psi_risk_class = str(psi_risk_class).upper()
         if psi_risk_class not in self.DISPOSITION_MAP:
-            psi_risk_class = "III"
+            raise ValueError("PSI class must be I, II, III, IV or V")
 
+        if not isinstance(severe_cap, bool):
+            raise ValueError("severe_cap must be a boolean assessed independently of PSI")
         config = self.DISPOSITION_MAP[psi_risk_class]
         social_factors = social_factors or {}
 
@@ -229,6 +232,14 @@ class DispositionDecisionEngine:
         rationale = list(config["rationale"])
         level = config["level"]
         alternative = config["alternative"]
+        urgency = config["bed_urgency"]
+        if severe_cap:
+            level = DispositionLevel.ICU
+            alternative = None
+            urgency = "emergent"
+            rationale.append("Severe CAP independently identified; urgent critical-care assessment is indicated")
+        else:
+            rationale.append("Location is provisional: clinical judgment and severe-CAP criteria take precedence")
 
         if social_factors.get("lives_alone") and psi_risk_class in ("I", "II"):
             rationale.append("Patient lives alone — consider observation for safety monitoring")
@@ -250,23 +261,21 @@ class DispositionDecisionEngine:
         }
 
         if bed_map.get(level, 999) <= 0:
-            rationale.append(f"⚠ {level.value} beds unavailable — using alternative disposition")
-            if alternative and bed_map.get(alternative, 0) > 0:
-                level = alternative
-            else:
-                rationale.append("All preferred beds at capacity — escalation to bed management")
+            rationale.append(f"No {level.value} bed available — request clinically appropriate transfer; do not downgrade due to capacity")
+            level = "transfer_required"
+            alternative = None
 
         return DispositionDecision(
             patient_id=patient_id,
             psi_risk_class=psi_risk_class,
             psi_score=psi_score,
-            recommended_level=level.value,
+            recommended_level=level.value if isinstance(level, DispositionLevel) else level,
             alternative_level=alternative.value if alternative else None,
             rationale=rationale,
             safety_net_plan=config["safety_net"],
             follow_up_schedule=config["follow_up"],
             escalation_criteria=config["escalation"],
-            bed_urgency=config["bed_urgency"],
+            bed_urgency=urgency,
         )
 
     def format_decision_report(self, decision: DispositionDecision) -> str:

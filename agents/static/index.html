@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Local, browser-based adult Pneumonia Severity Index (PSI / PORT) calculator.">
+  <meta name="referrer" content="no-referrer">
+  <title>PSI / PORT — Pneumonia Severity Index</title>
+  <style>
+    :root { color-scheme: dark; --bg:#0b1220;--panel:#131f33;--line:#304056;--muted:#b9c7d7;--text:#f6f9fd;--accent:#93c5fd;--focus:#fde68a }
+    * {box-sizing:border-box}
+    body {margin:0;background:var(--bg);color:var(--text);font:16px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif}
+    .wrap {width:min(1180px,calc(100% - 32px));margin:0 auto}
+    header {padding:28px 0 18px;border-bottom:1px solid var(--line)}
+    h1 {font-size:clamp(1.5rem,3vw,2rem);line-height:1.2;margin:0 0 8px}
+    h2 {font-size:1.15rem;margin:0 0 12px}
+    p {margin:0 0 14px}
+    .muted,small {color:var(--muted)}
+    .intro {padding:20px 0 8px}
+    .notice {padding:12px 15px;border:1px solid #987f49;border-radius:10px;background:#2b261a}
+    .grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;padding:14px 0}
+    .card {background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px}
+    fieldset {border:0;margin:0;padding:0}
+    legend {font-weight:700;font-size:1.1rem;margin-bottom:12px}
+    .demographics {display:flex;flex-wrap:wrap;gap:14px}
+    .field {flex:1;min-width:130px}
+    label {cursor:pointer}
+    .field label {display:block;margin-bottom:6px;font-weight:600}
+    input[type=number],select {width:100%;min-height:43px;background:#0b1628;color:var(--text);border:1px solid #61748a;border-radius:7px;padding:9px 10px;font:inherit}
+    .options {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 14px}
+    .option {display:flex;align-items:flex-start;gap:9px;padding:6px 0;line-height:1.35}
+    .option input {flex:0 0 auto;width:18px;height:18px;margin:2px 0;accent-color:#93c5fd}
+    input:focus-visible,select:focus-visible,button:focus-visible,a:focus-visible {outline:3px solid var(--focus);outline-offset:3px}
+    .points {font-size:.82rem;color:var(--muted);white-space:nowrap}
+    .full {grid-column:1/-1}
+    .review {display:flex;align-items:flex-start;gap:10px;padding:10px 0}
+    .review input {width:19px;height:19px;flex-shrink:0;accent-color:#93c5fd}
+    .buttons {display:flex;gap:12px;flex-wrap:wrap;margin-top:12px}
+    button {font:inherit;font-weight:700;padding:11px 22px;border-radius:8px;cursor:pointer;border:1px solid #7398bd}
+    button.primary {background:var(--accent);color:#071423}
+    button.secondary {background:transparent;color:var(--text)}
+    #result[hidden] {display:none}
+    #result {border-color:#7ca9d8}
+    .answer {display:flex;flex-wrap:wrap;gap:16px;align-items:baseline;margin-bottom:12px}
+    .large {font-size:2rem;font-weight:800;line-height:1.2;color:#b5dcff}
+    .breakdown {columns:2;padding-left:20px;column-gap:36px}
+    .breakdown li {break-inside:avoid;margin-bottom:4px}
+    footer {border-top:1px solid var(--line);padding:20px 0 38px;margin-top:14px;font-size:.9rem}
+    a {color:#b3d8ff}
+    @media (max-width:720px) {.grid {grid-template-columns:1fr}.options {grid-template-columns:1fr}.breakdown {columns:1}.wrap {width:min(100% - 24px,1180px)}}
+    @media (prefers-reduced-motion:reduce) {* {scroll-behavior:auto!important}}
+  </style>
+</head>
+<body>
+  <header><div class="wrap">
+    <h1>Pneumonia Severity Index <span class="muted">(PSI / PORT)</span></h1>
+    <p class="muted">Adult community-acquired pneumonia · Two-step Fine/PORT prediction rule</p>
+  </div></header>
+  <main class="wrap">
+    <div class="intro">
+      <p class="notice"><strong>Clinical decision support, not a diagnosis.</strong> PSI estimates 30-day mortality risk. It does not determine ICU admission or replace clinical judgment. Urgent respiratory failure, shock, hypoxemia, and other instability require evaluation irrespective of PSI class.</p>
+      <p class="muted" style="margin-top:12px">No names, identifiers, or records are needed. Calculations run only in this browser; no patient inputs are sent to a server or saved.</p>
+    </div>
+    <form id="psi-form">
+      <div class="grid">
+        <section class="card full">
+          <h2>Demographics</h2>
+          <div class="demographics">
+            <div class="field"><label for="age">Age in completed years</label><input id="age" name="age" type="number" min="18" max="120" step="1" inputmode="numeric" required placeholder="18–120"></div>
+            <div class="field"><label for="sex">Sex used by original PSI model</label><select id="sex" name="sex" required><option value="">Select</option><option value="male">Male</option><option value="female">Female</option></select></div>
+          </div>
+          <p class="muted" style="margin-top:12px">The historical score models sex as male or female, with 10 fewer points for female sex. The model is not validated in children or for other sex-variable categories.</p>
+        </section>
+        <section id="demographic-factors" class="card" aria-label="Residence risk"></section>
+        <section id="comorbidity-factors" class="card" aria-label="Medical history"></section>
+        <section id="examination-factors" class="card" aria-label="Physical examination"></section>
+        <section id="investigation-factors" class="card" aria-label="Laboratory and imaging findings"></section>
+        <section class="card full">
+          <h2>Assessment confirmation</h2>
+          <label class="review"><input type="checkbox" id="reviewed" required><span>I have reviewed every listed criterion. Unchecked items were assessed and are absent; they do <strong>not</strong> mean unknown or unmeasured.</span></label>
+          <p class="muted">If any required finding is unknown, do not use the displayed class to exclude severe pneumonia. Obtain the necessary clinical assessment first.</p>
+          <div class="buttons"><button class="primary" type="submit">Calculate PSI</button><button class="secondary" type="reset">Clear all</button></div>
+        </section>
+        <section id="result" class="card full" role="status" aria-live="polite" hidden>
+          <h2>PSI / PORT result</h2>
+          <div class="answer"><div><div class="muted">Risk class</div><div class="large" id="risk-class"></div></div><div><div class="muted">Point total</div><div class="large" id="score"></div></div></div>
+          <p id="risk-label"></p><p id="disposition"></p>
+          <p id="class-i-message" class="muted"></p>
+          <h2>Point breakdown</h2><ul id="components" class="breakdown"></ul>
+          <p class="muted">PSI is a prognostic decision aid, not an ICU triage score. Use ATS/IDSA severe-CAP criteria and clinical judgment for higher-level care decisions.</p>
+        </section>
+      </div>
+    </form>
+  </main>
+  <footer><div class="wrap">
+    <p><strong>Source:</strong> Fine MJ et al. <em>A prediction rule to identify low-risk patients with community-acquired pneumonia.</em> N Engl J Med. 1997;336:243–250. <a href="https://doi.org/10.1056/NEJM199701233360402" target="_blank" rel="noopener noreferrer">Original validation paper</a>.</p>
+    <p><a href="https://www.idsociety.org/practice-guideline/community-acquired-pneumonia-cap-in-adults/" target="_blank" rel="noopener noreferrer">2019 ATS/IDSA adult CAP guideline</a> · Source code: <a href="https://github.com/abusuraihsakhri/psi-port-pneumonia-severity-index" target="_blank" rel="noopener noreferrer">GitHub</a> · MIT License.</p>
+  </div></footer>
+  <script src="./psi.js"></script>
+  <script>
+    "use strict";
+    const headings = {demographic:"Residence",comorbidity:"Comorbidities",examination:"Physical examination",investigation:"Laboratory / imaging"};
+    const containers = {
+      demographic: document.getElementById("demographic-factors"),
+      comorbidity: document.getElementById("comorbidity-factors"),
+      examination: document.getElementById("examination-factors"),
+      investigation: document.getElementById("investigation-factors")
+    };
+    for (const [group, element] of Object.entries(containers)) {
+      const fieldset = document.createElement("fieldset");
+      const legend = document.createElement("legend");
+      legend.textContent = headings[group];
+      fieldset.append(legend);
+      const options = document.createElement("div");
+      options.className = "options";
+      for (const [key, title, points, category] of PSI.FACTORS) {
+        if (category !== group) continue;
+        const label = document.createElement("label");
+        label.className = "option";
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.name = key;
+        checkbox.dataset.psiFactor = key;
+        const description = document.createElement("span");
+        description.textContent = title + " ";
+        const pointsEl = document.createElement("span");
+        pointsEl.className = "points";
+        pointsEl.textContent = "+" + points;
+        description.append(pointsEl);
+        label.append(checkbox, description);
+        options.append(label);
+      }
+      fieldset.append(options);
+      element.append(fieldset);
+    }
+    const form = document.getElementById("psi-form");
+    const result = document.getElementById("result");
+    form.addEventListener("submit", event => {
+      event.preventDefault();
+      result.hidden = true;
+      if (!form.reportValidity()) return;
+      const data = {age: Number(document.getElementById("age").value), sex:document.getElementById("sex").value};
+      for (const [key] of PSI.FACTORS) data[key] = form.elements.namedItem(key).checked;
+      try {
+        const evaluated = PSI.scorePSI(data);
+        document.getElementById("risk-class").textContent = evaluated.risk_class;
+        document.getElementById("score").textContent = String(evaluated.score);
+        document.getElementById("risk-label").textContent = "Relative prognostic risk: " + evaluated.risk_level;
+        document.getElementById("disposition").textContent = evaluated.recommended_disposition + ".";
+        document.getElementById("class-i-message").textContent = evaluated.class_i_screen ?
+          "Class I is assigned by the initial clinical screening rule, not by the point-total cutoff." : "Class II–V assignment uses the point total.";
+        const list = document.getElementById("components");
+        list.replaceChildren();
+        for (const component of evaluated.components) {
+          const item = document.createElement("li");
+          item.textContent = component.factor + ": " + (component.points >= 0 ? "+" : "") + component.points;
+          list.append(item);
+        }
+        result.hidden = false;
+        result.scrollIntoView({block:"nearest",behavior:"auto"});
+      } catch (error) {
+        window.alert(error.message);
+      }
+    });
+    form.addEventListener("reset", () => { result.hidden = true; });
+  </script>
+</body>
+</html>

@@ -1,236 +1,168 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Psi Port Pneumonia Severity Index — Operations Console</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --bg: #090d16;
-            --card: #111827;
-            --border: #1f293d;
-            --accent: #3b82f6;
-            --accent-glow: rgba(59, 130, 246, 0.25);
-            --text: #f3f4f6;
-            --text-muted: #9ca3af;
-            --danger: #ef4444;
-            --warning: #f59e0b;
-            --success: #10b981;
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            font-family: 'Inter', sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            padding: 2rem;
-            min-height: 100vh;
-        }
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 1.5rem;
-            margin-bottom: 2rem;
-        }
-        .header-title h1 { font-size: 1.6rem; font-weight: 700; color: #fff; }
-        .header-title p { color: var(--text-muted); font-size: 0.9rem; margin-top: 0.25rem; }
-        .badge {
-            display: inline-block;
-            padding: 0.3rem 0.8rem;
-            border-radius: 9999px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            background: var(--accent-glow);
-            color: var(--accent);
-            border: 1px solid var(--accent);
-        }
-        .grid {
-            display: grid;
-            grid-template-columns: 1fr 1.2fr;
-            gap: 1.5rem;
-        }
-        .card {
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 1.5rem;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-        }
-        .card h2 {
-            font-size: 1.1rem;
-            font-weight: 600;
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        .form-group { margin-bottom: 1rem; }
-        label { display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.4rem; }
-        input, select, textarea {
-            width: 100%;
-            padding: 0.65rem 0.9rem;
-            background: #0d1322;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            color: #fff;
-            font-family: inherit;
-            font-size: 0.9rem;
-        }
-        input:focus, textarea:focus { outline: none; border-color: var(--accent); }
-        .btn {
-            background: var(--accent);
-            color: #fff;
-            border: none;
-            padding: 0.7rem 1.4rem;
-            border-radius: 6px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: 0.2s;
-            width: 100%;
-        }
-        .btn:hover { background: #2563eb; }
-        .terminal {
-            background: #060911;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 1rem;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.85rem;
-            color: #10b981;
-            height: 380px;
-            overflow-y: auto;
-            white-space: pre-wrap;
-        }
-        .metrics-bar {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-        }
-        .metric-box {
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 1rem;
-            text-align: center;
-        }
-        .metric-val { font-size: 1.4rem; font-weight: 700; color: #fff; margin-top: 0.25rem; }
-        .metric-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; }
-    </style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Local, browser-based adult Pneumonia Severity Index (PSI / PORT) calculator.">
+  <meta name="referrer" content="no-referrer">
+  <title>PSI / PORT — Pneumonia Severity Index</title>
+  <style>
+    :root { color-scheme: dark; --bg:#0b1220;--panel:#131f33;--line:#304056;--muted:#b9c7d7;--text:#f6f9fd;--accent:#93c5fd;--focus:#fde68a }
+    * {box-sizing:border-box}
+    body {margin:0;background:var(--bg);color:var(--text);font:16px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif}
+    .wrap {width:min(1180px,calc(100% - 32px));margin:0 auto}
+    header {padding:28px 0 18px;border-bottom:1px solid var(--line)}
+    h1 {font-size:clamp(1.5rem,3vw,2rem);line-height:1.2;margin:0 0 8px}
+    h2 {font-size:1.15rem;margin:0 0 12px}
+    p {margin:0 0 14px}
+    .muted,small {color:var(--muted)}
+    .intro {padding:20px 0 8px}
+    .notice {padding:12px 15px;border:1px solid #987f49;border-radius:10px;background:#2b261a}
+    .grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;padding:14px 0}
+    .card {background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px}
+    fieldset {border:0;margin:0;padding:0}
+    legend {font-weight:700;font-size:1.1rem;margin-bottom:12px}
+    .demographics {display:flex;flex-wrap:wrap;gap:14px}
+    .field {flex:1;min-width:130px}
+    label {cursor:pointer}
+    .field label {display:block;margin-bottom:6px;font-weight:600}
+    input[type=number],select {width:100%;min-height:43px;background:#0b1628;color:var(--text);border:1px solid #61748a;border-radius:7px;padding:9px 10px;font:inherit}
+    .options {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 14px}
+    .option {display:flex;align-items:flex-start;gap:9px;padding:6px 0;line-height:1.35}
+    .option input {flex:0 0 auto;width:18px;height:18px;margin:2px 0;accent-color:#93c5fd}
+    input:focus-visible,select:focus-visible,button:focus-visible,a:focus-visible {outline:3px solid var(--focus);outline-offset:3px}
+    .points {font-size:.82rem;color:var(--muted);white-space:nowrap}
+    .full {grid-column:1/-1}
+    .review {display:flex;align-items:flex-start;gap:10px;padding:10px 0}
+    .review input {width:19px;height:19px;flex-shrink:0;accent-color:#93c5fd}
+    .buttons {display:flex;gap:12px;flex-wrap:wrap;margin-top:12px}
+    button {font:inherit;font-weight:700;padding:11px 22px;border-radius:8px;cursor:pointer;border:1px solid #7398bd}
+    button.primary {background:var(--accent);color:#071423}
+    button.secondary {background:transparent;color:var(--text)}
+    #result[hidden] {display:none}
+    #result {border-color:#7ca9d8}
+    .answer {display:flex;flex-wrap:wrap;gap:16px;align-items:baseline;margin-bottom:12px}
+    .large {font-size:2rem;font-weight:800;line-height:1.2;color:#b5dcff}
+    .breakdown {columns:2;padding-left:20px;column-gap:36px}
+    .breakdown li {break-inside:avoid;margin-bottom:4px}
+    footer {border-top:1px solid var(--line);padding:20px 0 38px;margin-top:14px;font-size:.9rem}
+    a {color:#b3d8ff}
+    @media (max-width:720px) {.grid {grid-template-columns:1fr}.options {grid-template-columns:1fr}.breakdown {columns:1}.wrap {width:min(100% - 24px,1180px)}}
+    @media (prefers-reduced-motion:reduce) {* {scroll-behavior:auto!important}}
+  </style>
 </head>
 <body>
-
-    <div class="header">
-        <div class="header-title">
-            <h1>Psi Port Pneumonia Severity Index</h1>
-            <p>Domain: Clinical & Cryptographic AI | Standard: CAP / CLSI / NIST Standards | LabMind-Atlas Architecture</p>
-        </div>
-        <div>
-            <span class="badge">Air-Gapped Active</span>
-            <span class="badge" style="background: rgba(16,185,129,0.2); color: #10b981; border-color: #10b981;">Zero-PHI Guard Active</span>
-        </div>
+  <header><div class="wrap">
+    <h1>Pneumonia Severity Index <span class="muted">(PSI / PORT)</span></h1>
+    <p class="muted">Adult community-acquired pneumonia · Two-step Fine/PORT prediction rule</p>
+  </div></header>
+  <main class="wrap">
+    <div class="intro">
+      <p class="notice"><strong>Clinical decision support, not a diagnosis.</strong> PSI estimates 30-day mortality risk. It does not determine ICU admission or replace clinical judgment. Urgent respiratory failure, shock, hypoxemia, and other instability require evaluation irrespective of PSI class.</p>
+      <p class="muted" style="margin-top:12px">No names, identifiers, or records are needed. Calculations run only in this browser; no patient inputs are sent to a server or saved.</p>
     </div>
-
-    <div class="metrics-bar">
-        <div class="metric-box">
-            <div class="metric-label">System Status</div>
-            <div class="metric-val" style="color: var(--success);" id="m-status">OPTIMAL</div>
-        </div>
-        <div class="metric-box">
-            <div class="metric-label">Tasks Processed</div>
-            <div class="metric-val" id="m-tasks">142</div>
-        </div>
-        <div class="metric-box">
-            <div class="metric-label">Audit Blocks Signed</div>
-            <div class="metric-val" id="m-audit">142</div>
-        </div>
-        <div class="metric-box">
-            <div class="metric-label">PHI Interceptions</div>
-            <div class="metric-val" style="color: var(--accent);" id="m-phi">0</div>
-        </div>
-    </div>
-
-    <div class="grid">
-        <div class="card">
-            <h2>⚙️ Dispatch Distributed Component Audit</h2>
-            <div class="form-group">
-                <label>Task / Sample ID</label>
-                <input type="text" id="task_id" value="TASK-2026-LIVE-01">
-            </div>
-            <div class="form-group">
-                <label>Target Identifier</label>
-                <input type="text" id="target_id" value="SPECIMEN-ALPHA-77">
-            </div>
-            <div class="form-group">
-                <label>Primary Measurement / Value</label>
-                <input type="number" id="primary_metric" value="29.4" step="0.1">
-            </div>
-            <div class="form-group">
-                <label>Secondary Metric / Kinetic Index</label>
-                <input type="number" id="secondary_metric" value="14.8" step="0.1">
-            </div>
-            <div class="form-group">
-                <label>Status / Phenotype Descriptor</label>
-                <input type="text" id="status_descriptor" value="DISCORDANT_ANOMALY">
-            </div>
-            <div class="form-group">
-                <label><input type="checkbox" id="is_critical" checked> Trigger Emergency / Critical Flag</label>
-            </div>
-            <button class="btn" onclick="runAudit()">Execute Distributed Component Audit</button>
-        </div>
-
-        <div class="card">
-            <h2>📊 Real-Time Consensus Dossier & Audit Log</h2>
-            <div class="terminal" id="outputConsole">// Psi Port Pneumonia Severity Index Operations Console Ready
-// Connection established with Air-Gapped Supervisor
-// Cryptographic HMAC-SHA256 audit ledger loaded.
-// Ready for live task payload dispatch...</div>
-        </div>
-    </div>
-
-    <script>
-        async function runAudit() {
-            const consoleEl = document.getElementById('outputConsole');
-            consoleEl.innerText = "// Dispatching task across specialized workers...
-// Invoking InvariantQCWorker, SafetyEscalationWorker, ProtocolWorker...";
-
-            const payload = {
-                task_id: document.getElementById('task_id').value,
-                target_identifier: document.getElementById('target_id').value,
-                primary_metric: parseFloat(document.getElementById('primary_metric').value),
-                secondary_metric: parseFloat(document.getElementById('secondary_metric').value),
-                status_descriptor: document.getElementById('status_descriptor').value,
-                is_critical_flag: document.getElementById('is_critical').checked
-            };
-
-            try {
-                const res = await fetch('/api/audit', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                const data = await res.json();
-                consoleEl.innerText = JSON.stringify(data, null, 2);
-                document.getElementById('m-tasks').innerText = parseInt(document.getElementById('m-tasks').innerText) + 1;
-                document.getElementById('m-audit').innerText = parseInt(document.getElementById('m-audit').innerText) + 1;
-            } catch (err) {
-                consoleEl.innerText = "// Offline / Simulation Output:\n" + JSON.stringify({
-                    dossier_id: "DOSSIER-SIM-" + Math.floor(Math.random()*10000),
-                    system: "psi-port-pneumonia-severity-index",
-                    domain: "Clinical & Cryptographic AI",
-                    task_id: payload.task_id,
-                    overall_urgency: payload.is_critical_flag ? "CRITICAL_STAT_PANIC" : "ELEVATED_RISK",
-                    integrity_status: "DISCORDANT_ANOMALY",
-                    alerts: [
-                        { worker: "InvariantQCWorker", alert: "Primary metric exceeds upper reference bound" },
-                        { worker: "SafetyEscalationWorker", alert: "Critical emergency interlock flag active" }
-                    ],
-                    audit_hash: "HMAC_SHA256_e83f9a72b941d6c381f9"
-                }, null, 2);
-            }
+    <form id="psi-form">
+      <div class="grid">
+        <section class="card full">
+          <h2>Demographics</h2>
+          <div class="demographics">
+            <div class="field"><label for="age">Age in completed years</label><input id="age" name="age" type="number" min="18" max="120" step="1" inputmode="numeric" required placeholder="18–120"></div>
+            <div class="field"><label for="sex">Sex used by original PSI model</label><select id="sex" name="sex" required><option value="">Select</option><option value="male">Male</option><option value="female">Female</option></select></div>
+          </div>
+          <p class="muted" style="margin-top:12px">The historical score models sex as male or female, with 10 fewer points for female sex. The model is not validated in children or for other sex-variable categories.</p>
+        </section>
+        <section id="demographic-factors" class="card" aria-label="Residence risk"></section>
+        <section id="comorbidity-factors" class="card" aria-label="Medical history"></section>
+        <section id="examination-factors" class="card" aria-label="Physical examination"></section>
+        <section id="investigation-factors" class="card" aria-label="Laboratory and imaging findings"></section>
+        <section class="card full">
+          <h2>Assessment confirmation</h2>
+          <label class="review"><input type="checkbox" id="reviewed" required><span>I have reviewed every listed criterion. Unchecked items were assessed and are absent; they do <strong>not</strong> mean unknown or unmeasured.</span></label>
+          <p class="muted">If any required finding is unknown, do not use the displayed class to exclude severe pneumonia. Obtain the necessary clinical assessment first.</p>
+          <div class="buttons"><button class="primary" type="submit">Calculate PSI</button><button class="secondary" type="reset">Clear all</button></div>
+        </section>
+        <section id="result" class="card full" role="status" aria-live="polite" hidden>
+          <h2>PSI / PORT result</h2>
+          <div class="answer"><div><div class="muted">Risk class</div><div class="large" id="risk-class"></div></div><div><div class="muted">Point total</div><div class="large" id="score"></div></div></div>
+          <p id="risk-label"></p><p id="disposition"></p>
+          <p id="class-i-message" class="muted"></p>
+          <h2>Point breakdown</h2><ul id="components" class="breakdown"></ul>
+          <p class="muted">PSI is a prognostic decision aid, not an ICU triage score. Use ATS/IDSA severe-CAP criteria and clinical judgment for higher-level care decisions.</p>
+        </section>
+      </div>
+    </form>
+  </main>
+  <footer><div class="wrap">
+    <p><strong>Source:</strong> Fine MJ et al. <em>A prediction rule to identify low-risk patients with community-acquired pneumonia.</em> N Engl J Med. 1997;336:243–250. <a href="https://doi.org/10.1056/NEJM199701233360402" target="_blank" rel="noopener noreferrer">Original validation paper</a>.</p>
+    <p><a href="https://www.idsociety.org/practice-guideline/community-acquired-pneumonia-cap-in-adults/" target="_blank" rel="noopener noreferrer">2019 ATS/IDSA adult CAP guideline</a> · Source code: <a href="https://github.com/abusuraihsakhri/psi-port-pneumonia-severity-index" target="_blank" rel="noopener noreferrer">GitHub</a> · MIT License.</p>
+  </div></footer>
+  <script src="./psi.js"></script>
+  <script>
+    "use strict";
+    const headings = {demographic:"Residence",comorbidity:"Comorbidities",examination:"Physical examination",investigation:"Laboratory / imaging"};
+    const containers = {
+      demographic: document.getElementById("demographic-factors"),
+      comorbidity: document.getElementById("comorbidity-factors"),
+      examination: document.getElementById("examination-factors"),
+      investigation: document.getElementById("investigation-factors")
+    };
+    for (const [group, element] of Object.entries(containers)) {
+      const fieldset = document.createElement("fieldset");
+      const legend = document.createElement("legend");
+      legend.textContent = headings[group];
+      fieldset.append(legend);
+      const options = document.createElement("div");
+      options.className = "options";
+      for (const [key, title, points, category] of PSI.FACTORS) {
+        if (category !== group) continue;
+        const label = document.createElement("label");
+        label.className = "option";
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.name = key;
+        checkbox.dataset.psiFactor = key;
+        const description = document.createElement("span");
+        description.textContent = title + " ";
+        const pointsEl = document.createElement("span");
+        pointsEl.className = "points";
+        pointsEl.textContent = "+" + points;
+        description.append(pointsEl);
+        label.append(checkbox, description);
+        options.append(label);
+      }
+      fieldset.append(options);
+      element.append(fieldset);
+    }
+    const form = document.getElementById("psi-form");
+    const result = document.getElementById("result");
+    form.addEventListener("submit", event => {
+      event.preventDefault();
+      result.hidden = true;
+      if (!form.reportValidity()) return;
+      const data = {age: Number(document.getElementById("age").value), sex:document.getElementById("sex").value};
+      for (const [key] of PSI.FACTORS) data[key] = form.elements.namedItem(key).checked;
+      try {
+        const evaluated = PSI.scorePSI(data);
+        document.getElementById("risk-class").textContent = evaluated.risk_class;
+        document.getElementById("score").textContent = String(evaluated.score);
+        document.getElementById("risk-label").textContent = "Relative prognostic risk: " + evaluated.risk_level;
+        document.getElementById("disposition").textContent = evaluated.recommended_disposition + ".";
+        document.getElementById("class-i-message").textContent = evaluated.class_i_screen ?
+          "Class I is assigned by the initial clinical screening rule, not by the point-total cutoff." : "Class II–V assignment uses the point total.";
+        const list = document.getElementById("components");
+        list.replaceChildren();
+        for (const component of evaluated.components) {
+          const item = document.createElement("li");
+          item.textContent = component.factor + ": " + (component.points >= 0 ? "+" : "") + component.points;
+          list.append(item);
         }
-    </script>
+        result.hidden = false;
+        result.scrollIntoView({block:"nearest",behavior:"auto"});
+      } catch (error) {
+        window.alert(error.message);
+      }
+    });
+    form.addEventListener("reset", () => { result.hidden = true; });
+  </script>
 </body>
 </html>

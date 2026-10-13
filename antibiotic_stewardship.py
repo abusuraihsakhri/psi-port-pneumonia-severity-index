@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """
 PSI/PORT Antibiotic Stewardship Linkage
-Generates empiric antibiotic recommendations based on PSI risk class and
-local resistance patterns for community-acquired pneumonia.
+Illustrative antibiotic stewardship pathways for adult CAP.
+PSI is prognostic; antibiotic selection depends on severity, setting, allergies,
+microbiology, local guidance and individual contraindications.
 
 Author: Dr. Abu Suraih Sakhri | License: MIT
 """
@@ -36,8 +37,8 @@ class AntibioticRecommendation:
 
 class AntibioticStewardshipEngine:
     """
-    Maps PSI/PORT risk classes to IDSA/ATS guideline-concordant empiric
-    antibiotic regimens, adjusted for local resistance patterns.
+    Educational treatment-pathway examples only. PSI is not an antibiotic
+    prescribing rule; clinical review is necessary before any treatment.
     """
 
     # IDSA/ATS 2019 CAP guidelines mapped to PSI risk classes
@@ -81,7 +82,7 @@ class AntibioticStewardshipEngine:
             "notes": "IV antibiotics required; de-escalate when culture results available",
         },
         "V": {
-            "setting": "ICU",
+            "setting": "Hospital (ICU need requires independent severe-CAP assessment)",
             "primary": "β-lactam (ceftriaxone 2g IV or piperacillin-tazobactam) + macrolide",
             "alternative": "β-lactam + respiratory fluoroquinolone",
             "notes": "Consider MRSA coverage (vancomycin or linezolid) if risk factors present",
@@ -113,7 +114,7 @@ class AntibioticStewardshipEngine:
         """Generate antibiotic recommendation based on PSI class and patient factors."""
         psi_risk_class = str(psi_risk_class).upper()
         if psi_risk_class not in self.GUIDELINE_REGIMENS:
-            psi_risk_class = "III"  # default to moderate
+            raise ValueError("PSI class must be I, II, III, IV or V")
 
         regimen_info = self.GUIDELINE_REGIMENS[psi_risk_class]
         setting = regimen_info["setting"]
@@ -130,17 +131,11 @@ class AntibioticStewardshipEngine:
             alternative = regimen_info["alternative"]
             notes = regimen_info.get("notes", "")
 
-        # Allergy adjustments
-        if penicillin_allergy:
-            primary = primary.replace("Amoxicillin-clavulanate", "Doxycycline").replace("Amoxicillin", "Doxycycline")
-            if "β-lactam" in primary:
-                primary = "Respiratory fluoroquinolone monotherapy"
-            alternative = "Azithromycin 500mg day 1, then 250mg days 2-5" if not macrolide_allergy else "Doxycycline 100mg BID"
-
-        if macrolide_allergy:
-            primary = primary.replace("+ macrolide", "+ doxycycline").replace("+ Macrolide", "+ doxycycline")
-            if "macrolide" in alternative.lower():
-                alternative = "Respiratory fluoroquinolone monotherapy"
+        # Never algorithmically substitute antimicrobials for a reported allergy.
+        # The allergy phenotype and CAP severity need clinician review.
+        if penicillin_allergy or macrolide_allergy:
+            primary = "Individualized treatment required: review reported allergy, severity and local CAP protocol"
+            alternative = "Do not select a substitute regimen based solely on the PSI class"
 
         # Local resistance alerts
         resistance_alerts = self._check_local_resistance(psi_risk_class)
@@ -158,7 +153,7 @@ class AntibioticStewardshipEngine:
             alternative_regimen=alternative,
             duration_days=duration,
             monitoring=monitoring,
-            de_escalation_notes=notes,
+            de_escalation_notes=notes + " Educational example only; do not prescribe from PSI alone. Review local guidelines, renal function, allergies and clinical stability.",
             local_resistance_alerts=resistance_alerts,
         )
 
