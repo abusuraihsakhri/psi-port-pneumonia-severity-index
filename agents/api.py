@@ -72,4 +72,4 @@ def api_audit_logs():
 
 # Serve the same offline-capable, dependency-free calculator at the API root.
 # Registered last so API routes retain priority.
-app.mount("/", StaticFiles(directory=Path(__file__).resolve().parent.parent / "web", html=True), name="calculator")
+app.mount("/", StaticFiles(directory=Path(__file__).resolve().parent / "static", html=True), name="calculator")
