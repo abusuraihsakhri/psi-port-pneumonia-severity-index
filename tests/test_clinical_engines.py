@@ -30,7 +30,7 @@ class TestPneumoniaPatientValidation:
             PneumoniaPatient(patient_id="   ", age=65, sex="male")
 
     def test_invalid_age_negative(self):
-        with pytest.raises(ValueError, match="age must be between 0 and 150"):
+        with pytest.raises(ValueError, match="age must be an integer between 18 and 120"):
             PneumoniaPatient(patient_id="PT-001", age=-5, sex="male")
 
     def test_invalid_age_too_high(self):
@@ -47,24 +47,34 @@ class TestPSIScoring:
 
     def test_low_risk_class_I(self):
         engine = ParallelScoreComparison()
-        # Very young female patient -> age - 10 <= 0 -> Class I
+        # A 35-year-old with no listed clinical risk factors qualifies at stage 1.
         patient = PneumoniaPatient(
-            patient_id="PT-001", age=8, sex="female",
+            patient_id="PT-001", age=35, sex="female",
             nursing_home_resident=False,
         )
         result = engine.compute_psi_score(patient)
         assert result["risk_class"] == "I"
-        assert result["score"] <= 0
+        assert result["score"] == 25
 
-    def test_class_II_young_adult(self):
+    def test_class_II_older_adult(self):
         engine = ParallelScoreComparison()
-        # 35-year-old male -> score 35 -> Class II (score <= 70)
+        # 55-year-old male does not qualify for Class I, score 55 -> II
         patient = PneumoniaPatient(
-            patient_id="PT-002", age=35, sex="male",
+            patient_id="PT-002", age=55, sex="male",
         )
         result = engine.compute_psi_score(patient)
         assert result["risk_class"] == "II"
         assert result["score"] <= 70
+
+    def test_high_temperature_and_oxygen_saturation(self):
+        engine = ParallelScoreComparison()
+        patient = PneumoniaPatient(
+            patient_id="PT-X", age=65, sex="male",
+            temperature_ge_40=True, oxygen_saturation_lt_90=True,
+        )
+        result = engine.compute_psi_score(patient)
+        assert result["score"] == 90
+        assert result["risk_class"] == "III"
 
     def test_high_risk_class_V(self):
         engine = ParallelScoreComparison()
